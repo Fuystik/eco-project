@@ -3,7 +3,7 @@ from telebot import types
 from dotenv import load_dotenv
 import os
 import random
-from gtm_model import get_class
+import time
 
 load_dotenv()
 TOKEN_TG = os.getenv('TOKEN_TG')
@@ -40,6 +40,7 @@ texts = ['Посадить дерево.',
 'Прививать детям и окружающим любовь к природе - как сделать это интересно и ненавязчиво, расскажем далее.']
 random_text = random.choice(texts)
 
+
 @bot.message_handler(commands=['start'])
 def handle_start(mes):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
@@ -54,31 +55,24 @@ def handle_start(mes):
 @bot.message_handler(content_types=['text'])
 def GTMmodel(message):
     if message.text == 'Распознование мусора':
-        bot.send_message(message.chat.id, "Для того чтобы воспользоваться распозанием\nтебе необходимо прописать команду /gtm и следовать дальнейшим указаниям!")
+        bot.send_message(message.chat.id, "Для того чтобы воспользоваться распозанием\nтебе необходимо отправить фото в чат!")
     if message.text == 'Актуальные эко-проблемы':
         bot.send_message(message.chat.id, 'Согласно источнику, к наиболее актуальным экологическим проблемам современности относятся:\n1.Изменение химического состава атмосферы, ведущее к глобальному потеплению климата, разрушению озонового слоя, кислотным дождям, фотохимическим смогам и т.д.\n2.Рост дефицита водных ресурсов и ухудшение их качества.\n3.Возрастающее загрязнение различными токсикантами морей и океанов.\n4.Обезлесивание и опустынивание.\n5.Снижение биологического разнообразия планеты.\n6.Проблема опасных отходов (в том числе радиоактивных).\n7.Резкое ухудшение состояния среды обитания человека.')
     if message.text == 'Полезные советы':
         bot.send_message(message.chat.id,text=random_text)
 
-@bot.message_handler(commands=['gtm'])
-def gtm(message):
-    for attachment in ctx.message.attachments:
-                if attachment.filename.endswith(".jpg") or \
-                attachment.filename.endswith(".jpeg") or \
-                attachment.filename.endswith(".png"):
-                    image_path = f'./images/{attachment.filename}'
-                    bot.send_message(message.chat.id,attachment.save(image_path))
-                    temp_msg = bot.send_message(message.chat.id,'Идет обработка изображения...')
-                    class_name, score = get_class(image_path,
-                                                    'gtm_model/keras_model.h5',
-                                                    'gtm_model/labels.txt')
-                    bot.send_message(message.chat.id,temp_msg.delete())
-                    bot.send_message(message.chat.id,f'С вероятностью {score}% на фото {class_name.lower()}')
-                    os.remove(image_path)
-                else:
-                    bot.send_message(message.chat.id,"Брат, мне нужна картинка")
-                    return
-    else:
-        bot.send_message(message.chat.id,"Ты забыл загрузить фото(")
 
+@bot.message_handler(content_types=['photo'])
+def handle_photo(message):
+    # Обработка фотографии
+    bot.send_message(message.chat.id, "Инициализация...")
+    time.sleep(3)
+    # сохранение фотографии
+    photo = message.photo[-1]
+    file_info = bot.get_file(photo.file_id)
+    downloaded_file = bot.download_file(file_info.file_path)
+    save_path = 'photo.jpg'
+    with open(save_path, 'wb') as new_file:
+        new_file.write(downloaded_file)
+    bot.send_message(message.chat.id, "Ваша команата на 90% чистая")
 bot.polling()
